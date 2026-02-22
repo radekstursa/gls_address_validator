@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Address Validator MVP (RÚIAN API)</title>
+<title>Address Validator MVP (Mapy.cz API)</title>
 <style>
 body { font-family: Arial; max-width: 450px; margin: 40px auto; }
 input { width: 100%; padding: 10px; margin: 8px 0; font-size: 16px; }
@@ -12,7 +12,7 @@ button { padding: 12px; width: 100%; font-size: 16px; cursor: pointer; }
 </head>
 <body>
 
-<h2>Address Validator MVP (RÚIAN)</h2>
+<h2>Address Validator MVP (Mapy.cz)</h2>
 
 <input id="street" placeholder="Street (e.g. Kovářova)">
 <input id="city" placeholder="City (e.g. Žďár nad Sázavou)">
@@ -27,26 +27,55 @@ async function validateAddress() {
   const city = document.getElementById("city").value.trim();
   const zip = document.getElementById("zip").value.trim();
 
-  const query = `${street}, ${city}, ${zip}`;
+  const query = `${street}, ${city}, ${zip}, Czech Republic`;
 
   document.getElementById("result").textContent = "Validating...";
 
   try {
     const res = await fetch(
-      `https://ruian.fnx.io/validate?address=${encodeURIComponent(query)}`
+      `https://api.mapy.cz/geocode?query=${encodeURIComponent(query)}`
     );
 
-    const data = await res.json();
+    const text = await res.text();
 
-    document.getElementById("result").textContent =
-      JSON.stringify(data, null, 2);
+    // Mapy.cz returns XML, so we parse it
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, "text/xml");
+
+    const item = xml.querySelector("item");
+
+    if (!item) {
+      document.getElementById("result").textContent =
+        JSON.stringify({ valid: false, reason: "Address not found" }, null, 2);
+      return;
+    }
+
+    const foundCity = item.getAttribute("city");
+    const foundStreet = item.getAttribute("street");
+    const foundZip = item.getAttribute("zip");
+
+    const isValid =
+      foundCity?.toLowerCase() === city.toLowerCase() &&
+      foundStreet?.toLowerCase() === street.toLowerCase() &&
+      foundZip === zip;
+
+    document.getElementById("result").textContent = JSON.stringify(
+      {
+        valid: isValid,
+        input: { street, city, zip },
+        matched: { foundStreet, foundCity, foundZip }
+      },
+      null,
+      2
+    );
 
   } catch (err) {
     document.getElementById("result").textContent =
-      "Error contacting RÚIAN API.";
+      "Error contacting Mapy.cz API.";
   }
 }
 </script>
 
 </body>
 </html>
+
