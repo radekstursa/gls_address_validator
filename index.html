@@ -1,64 +1,76 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Address Validator MVP</title>
-<style>
-body { font-family: Arial; max-width: 400px; margin: 40px auto; }
-input { width: 100%; padding: 8px; margin: 6px 0; }
-button { padding: 10px; width: 100%; }
-#result { margin-top: 20px; white-space: pre-wrap; font-family: monospace; }
-</style>
-</head>
-<body>
-
-<h2>Address Validator MVP</h2>
-
-<input id="city" placeholder="City (e.g. Jihlava)">
-<input id="zip" placeholder="ZIP (e.g. 58601)">
-<button onclick="validateAddress()">Validate</button>
-
-<div id="result"></div>
-
 <script>
-// Simple dataset
+// Database: cities → ZIPs → streets
 const DB = {
-  "Jihlava": ["58601", "58602"],
-  "Žďár nad Sázavou": ["59101"],
-  "Brno": ["60200", "60300"],
-  "Praha": ["11000", "12000", "13000"]
+  "Jihlava": {
+    "58601": ["Husova", "Polní", "Srázná"],
+    "58602": ["Okružní", "Březinova"]
+  },
+  "Žďár nad Sázavou": {
+    "59101": ["Husova", "Studentská", "Novoměstská"]
+  },
+  "Brno": {
+    "60200": ["Česká", "Veveří"],
+    "60300": ["Kounicova"]
+  }
 };
 
-// Fuzzy matching
-function suggestCity(city) {
-  const cities = Object.keys(DB);
-  return cities.filter(c => c.toLowerCase().includes(city.toLowerCase()));
+// Find cities where a street exists
+function findStreetInOtherCities(street) {
+  const matches = [];
+  for (const city of Object.keys(DB)) {
+    for (const zip of Object.keys(DB[city])) {
+      if (DB[city][zip].includes(street)) {
+        matches.push({ city, zip });
+      }
+    }
+  }
+  return matches;
 }
 
 function validateAddress() {
   const city = document.getElementById("city").value.trim();
   const zip = document.getElementById("zip").value.trim();
+  const street = document.getElementById("street").value.trim();
   let result = {};
 
+  // City not found
   if (!DB[city]) {
     result = {
       valid: false,
       reason: "Unknown city",
-      suggestions: suggestCity(city)
+      suggestions: Object.keys(DB)
     };
-  } else if (!DB[city].includes(zip)) {
-    result = {
-      valid: false,
-      reason: "ZIP does not match city",
-      suggestions: DB[city]
-    };
-  } else {
-    result = { valid: true, reason: "OK" };
+    document.getElementById("result").textContent = JSON.stringify(result, null, 2);
+    return;
   }
 
+  // ZIP not valid for this city
+  if (!DB[city][zip]) {
+    result = {
+      valid: false,
+      reason: "ZIP does not belong to this city",
+      validZips: Object.keys(DB[city])
+    };
+    document.getElementById("result").textContent = JSON.stringify(result, null, 2);
+    return;
+  }
+
+  // Street not found in this city
+  if (!DB[city][zip].includes(street)) {
+    const otherCities = findStreetInOtherCities(street);
+
+    result = {
+      valid: false,
+      reason: "Street does not exist in this city",
+      streetExistsIn: otherCities
+    };
+
+    document.getElementById("result").textContent = JSON.stringify(result, null, 2);
+    return;
+  }
+
+  // All good
+  result = { valid: true, reason: "Address is valid" };
   document.getElementById("result").textContent = JSON.stringify(result, null, 2);
 }
 </script>
-
-</body>
-</html>
