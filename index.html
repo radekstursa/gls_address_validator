@@ -25,38 +25,29 @@
 let DB = {};
 
 async function loadData() {
-    try {
-        console.log("Loading zdar.json...");
-        const res = await fetch("zdar.json");
-        console.log("Fetch status:", res.status);
+    console.log("Loading zdar.json...");
+    const res = await fetch("zdar.json");
 
-        if (!res.ok) {
-            document.getElementById("result").textContent =
-                "Error: zdar.json not found. Make sure the file is in the same folder as index.html.";
-            return;
-        }
-
-        DB = await res.json();
-        console.log("DB loaded:", DB);
-    } catch (e) {
-        console.error("Error loading JSON:", e);
-        document.getElementById("result").textContent = "Error loading zdar.json.";
+    if (!res.ok) {
+        document.getElementById("result").textContent =
+            "Error: zdar.json not found. Upload it to the same folder as index.html.";
+        return;
     }
+
+    DB = await res.json();
+    console.log("DB loaded:", DB);
 }
 
 async function validateAddress() {
     console.log("validateAddress called");
 
     if (!Object.keys(DB).length) {
-        console.log("DB empty, loading...");
         await loadData();
     }
 
     const street = document.getElementById("street").value.trim();
     const city = document.getElementById("city").value.trim();
     const zip = document.getElementById("zip").value.trim();
-
-    console.log("Input:", { street, city, zip });
 
     if (!DB[city]) {
         document.getElementById("result").textContent = JSON.stringify({
