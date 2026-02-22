@@ -1,3 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Address Validator MVP</title>
+<style>
+body { font-family: Arial; max-width: 400px; margin: 40px auto; }
+input { width: 100%; padding: 8px; margin: 6px 0; }
+button { padding: 10px; width: 100%; }
+#result { margin-top: 20px; white-space: pre-wrap; font-family: monospace; }
+</style>
+</head>
+<body>
+
+<h2>Address Validator MVP</h2>
+
+<input id="city" placeholder="City (e.g. Jihlava)">
+<input id="zip" placeholder="ZIP (e.g. 58601)">
+<input id="street" placeholder="Street (e.g. Husova)">
+<button onclick="validateAddress()">Validate</button>
+
+<div id="result"></div>
+
 <script>
 // Database: cities → ZIPs → streets
 const DB = {
@@ -30,7 +53,6 @@ function findStreetInOtherCities(street) {
 function validateAddress() {
   const city = document.getElementById("city").value.trim();
   const zip = document.getElementById("zip").value.trim();
-  <input id="street" placeholder="Street (e.g. Husova)">
   const street = document.getElementById("street").value.trim();
   let result = {};
 
@@ -75,3 +97,6 @@ function validateAddress() {
   document.getElementById("result").textContent = JSON.stringify(result, null, 2);
 }
 </script>
+
+</body>
+</html>
