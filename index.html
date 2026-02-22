@@ -2,99 +2,49 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Address Validator MVP</title>
+<title>Address Validator MVP (RÚIAN API)</title>
 <style>
-body { font-family: Arial; max-width: 400px; margin: 40px auto; }
-input { width: 100%; padding: 8px; margin: 6px 0; }
-button { padding: 10px; width: 100%; }
+body { font-family: Arial; max-width: 450px; margin: 40px auto; }
+input { width: 100%; padding: 10px; margin: 8px 0; font-size: 16px; }
+button { padding: 12px; width: 100%; font-size: 16px; cursor: pointer; }
 #result { margin-top: 20px; white-space: pre-wrap; font-family: monospace; }
 </style>
 </head>
 <body>
 
-<h2>Address Validator MVP</h2>
+<h2>Address Validator MVP (RÚIAN)</h2>
 
-<input id="city" placeholder="City (e.g. Jihlava)">
-<input id="zip" placeholder="ZIP (e.g. 58601)">
-<input id="street" placeholder="Street (e.g. Husova)">
+<input id="street" placeholder="Street (e.g. Kovářova)">
+<input id="city" placeholder="City (e.g. Žďár nad Sázavou)">
+<input id="zip" placeholder="ZIP (e.g. 59101)">
 <button onclick="validateAddress()">Validate</button>
 
 <div id="result"></div>
 
 <script>
-// Database: cities → ZIPs → streets
-const DB = {
-  "Jihlava": {
-    "58601": ["Husova", "Polní", "Srázná"],
-    "58602": ["Okružní", "Březinova"]
-  },
-  "Žďár nad Sázavou": {
-    "59101": ["Husova", "Studentská", "Novoměstská"]
-  },
-  "Brno": {
-    "60200": ["Česká", "Veveří"],
-    "60300": ["Kounicova"]
-  }
-};
-
-// Find cities where a street exists
-function findStreetInOtherCities(street) {
-  const matches = [];
-  for (const city of Object.keys(DB)) {
-    for (const zip of Object.keys(DB[city])) {
-      if (DB[city][zip].includes(street)) {
-        matches.push({ city, zip });
-      }
-    }
-  }
-  return matches;
-}
-
-function validateAddress() {
+async function validateAddress() {
+  const street = document.getElementById("street").value.trim();
   const city = document.getElementById("city").value.trim();
   const zip = document.getElementById("zip").value.trim();
-  const street = document.getElementById("street").value.trim();
-  let result = {};
 
-  // City not found
-  if (!DB[city]) {
-    result = {
-      valid: false,
-      reason: "Unknown city",
-      suggestions: Object.keys(DB)
-    };
-    document.getElementById("result").textContent = JSON.stringify(result, null, 2);
-    return;
+  const query = `${street}, ${city}, ${zip}`;
+
+  document.getElementById("result").textContent = "Validating...";
+
+  try {
+    const res = await fetch(
+      `https://ruian.fnx.io/validate?address=${encodeURIComponent(query)}`
+    );
+
+    const data = await res.json();
+
+    document.getElementById("result").textContent =
+      JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    document.getElementById("result").textContent =
+      "Error contacting RÚIAN API.";
   }
-
-  // ZIP not valid for this city
-  if (!DB[city][zip]) {
-    result = {
-      valid: false,
-      reason: "ZIP does not belong to this city",
-      validZips: Object.keys(DB[city])
-    };
-    document.getElementById("result").textContent = JSON.stringify(result, null, 2);
-    return;
-  }
-
-  // Street not found in this city
-  if (!DB[city][zip].includes(street)) {
-    const otherCities = findStreetInOtherCities(street);
-
-    result = {
-      valid: false,
-      reason: "Street does not exist in this city",
-      streetExistsIn: otherCities
-    };
-
-    document.getElementById("result").textContent = JSON.stringify(result, null, 2);
-    return;
-  }
-
-  // All good
-  result = { valid: true, reason: "Address is valid" };
-  document.getElementById("result").textContent = JSON.stringify(result, null, 2);
 }
 </script>
 
