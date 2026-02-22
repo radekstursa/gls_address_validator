@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Address Validator MVP</title>
+<style>
+body { font-family: Arial; max-width: 400px; margin: 40px auto; }
+input { width: 100%; padding: 8px; margin: 6px 0; }
+button { padding: 10px; width: 100%; }
+#result { margin-top: 20px; white-space: pre-wrap; font-family: monospace; }
+</style>
+</head>
+<body>
+
+<h2>Address Validator MVP</h2>
+
+<input id="city" placeholder="City (e.g. Jihlava)">
+<input id="zip" placeholder="ZIP (e.g. 58601)">
+<button onclick="validateAddress()">Validate</button>
+
+<div id="result"></div>
+
+<script>
+// Simple dataset
+const DB = {
+  "Jihlava": ["58601", "58602"],
+  "Žďár nad Sázavou": ["59101"],
+  "Brno": ["60200", "60300"],
+  "Praha": ["11000", "12000", "13000"]
+};
+
+// Fuzzy matching
+function suggestCity(city) {
+  const cities = Object.keys(DB);
+  return cities.filter(c => c.toLowerCase().includes(city.toLowerCase()));
+}
+
+function validateAddress() {
+  const city = document.getElementById("city").value.trim();
+  const zip = document.getElementById("zip").value.trim();
+  let result = {};
+
+  if (!DB[city]) {
+    result = {
+      valid: false,
+      reason: "Unknown city",
+      suggestions: suggestCity(city)
+    };
+  } else if (!DB[city].includes(zip)) {
+    result = {
+      valid: false,
+      reason: "ZIP does not match city",
+      suggestions: DB[city]
+    };
+  } else {
+    result = { valid: true, reason: "OK" };
+  }
+
+  document.getElementById("result").textContent = JSON.stringify(result, null, 2);
+}
+</script>
+
+</body>
+</html>
